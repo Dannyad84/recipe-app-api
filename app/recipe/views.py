@@ -18,7 +18,12 @@ class BaseRecipeAttrViewSet(viewsets.GenericViewSet,
 
     def get_queryset(self):
         """Return objects for the current authenticated user only"""
-        return self.queryset.filter(user=self.request.user).order_by('-name')
+        assigned_only = bool(self.request.query_params.get('assigned_only'))
+        queryset = self.queryset
+        if assigned_only:
+            queryset = queryset.filter(recipe__isnull=False)
+
+        return queryset.filter(user=self.request.user).order_by('-name')
 
     def perform_create(self, serializer):
         """Create a new object"""
@@ -27,13 +32,12 @@ class BaseRecipeAttrViewSet(viewsets.GenericViewSet,
 
 class TagViewSet(BaseRecipeAttrViewSet):
     """Manage tags in the database"""
-
     queryset = Tag.objects.all()
     serializer_class = serializers.TagSerializer
 
 
 class IngredientViewSet(BaseRecipeAttrViewSet):
-    """Mange ingredients in the database"""
+    """Manage ingredients in the database"""
     queryset = Ingredient.objects.all()
     serializer_class = serializers.IngredientSerializer
 
@@ -46,7 +50,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
 
     def _params_to_ints(self, qs):
-        """Convert a list of string ICs to a list of intergers"""
+        """Convert a list of string IDs to a list of integers"""
         return [int(str_id) for str_id in qs.split(',')]
 
     def get_queryset(self):
@@ -64,7 +68,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset.filter(user=self.request.user)
 
     def get_serializer_class(self):
-        """Return approproate serializer class"""
+        """Return appropriate serializer class"""
         if self.action == 'retrieve':
             return serializers.RecipeDetailSerializer
         elif self.action == 'upload_image':
@@ -91,6 +95,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 serializer.data,
                 status=status.HTTP_200_OK
             )
+
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST

@@ -57,7 +57,7 @@ class PublicRecipeApiTests(TestCase):
         self.client = APIClient()
 
     def test_auth_required(self):
-        """Test that authenticated is required"""
+        """Test that authentication is required"""
         res = self.client.get(RECIPES_URL)
 
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -86,7 +86,7 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
-    def test_recipes_limited_to_use(self):
+    def test_recipes_limited_to_user(self):
         """Test retrieving recipes for user"""
         user2 = get_user_model().objects.create_user(
             'other@londonappdev.com',
@@ -131,8 +131,8 @@ class PrivateRecipeApiTests(TestCase):
 
     def test_create_recipe_with_tags(self):
         """Test creating a recipe with tags"""
-        tag1 = sample_tag(user=self.user, name='Tag 1')
-        tag2 = sample_tag(user=self.user, name='Tag 2')
+        tag1 = sample_tag(user=self.user, name='Vegan')
+        tag2 = sample_tag(user=self.user, name='Dessert')
         payload = {
             'title': 'Avocado lime cheesecake',
             'tags': [tag1.id, tag2.id],
@@ -231,7 +231,7 @@ class RecipeImageUploadTests(TestCase):
         self.assertIn('image', res.data)
         self.assertTrue(os.path.exists(self.recipe.image.path))
 
-    def test_upload_image_bad_requests(self):
+    def test_upload_image_bad_request(self):
         """Test uploading an invalid image"""
         url = image_upload_url(self.recipe.id)
         res = self.client.post(url, {'image': 'notimage'}, format='multipart')
@@ -246,7 +246,7 @@ class RecipeImageUploadTests(TestCase):
         tag2 = sample_tag(user=self.user, name='Vegetarian')
         recipe1.tags.add(tag1)
         recipe2.tags.add(tag2)
-        recipe3 = sample_recipe(user=self.user, title='Fish nad Chips')
+        recipe3 = sample_recipe(user=self.user, title='Fish and chips')
 
         res = self.client.get(
             RECIPES_URL,
